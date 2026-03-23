@@ -7,7 +7,9 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "tsc && node dist/index.js"
+    "dev": "tsc && node dist/index.js",
+    "start:imessage": "node dist/index_imessage.js",
+    "dev:imessage": "tsc && node dist/index_imessage.js"
   },
   "dependencies": {
     "@whiskeysockets/baileys": "7.0.0-rc.9",
