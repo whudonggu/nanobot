@@ -1,0 +1,52 @@
+name: Sync Upstream
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 2 * * 1"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync-upstream:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch upstream main
+        run: |
+          git remote add upstream https://github.com/HKUDS/nanobot.git
+          git fetch upstream main
+
+      - name: Update sync branch
+        run: |
+          git checkout -B sync/upstream-main upstream/main
+          git push --force-with-lease origin sync/upstream-main
+
+      - name: Create or update sync pull request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pr_number="$(gh pr list --base main --head sync/upstream-main --state open --json number --jq '.[0].number')"
+          if [ -n "$pr_number" ]; then
+            gh pr edit "$pr_number" \
+              --title "chore: sync upstream/main" \
+              --body "Automated weekly sync PR from https://github.com/HKUDS/nanobot on top of your fork."
+          else
+            gh pr create \
+              --base main \
+              --head sync/upstream-main \
+              --title "chore: sync upstream/main" \
+              --body "Automated weekly sync PR from https://github.com/HKUDS/nanobot on top of your fork."
+          fi
